@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">ChattingApp</string>
+    <string name="your_message_will_appear_here">Your Message will appear here</string>
+    <string name="button">Button</string>
+    <string name="type_here">Type here...</string>
+
+    <string name="send">Send</string>
+</resources>
