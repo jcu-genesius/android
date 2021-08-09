@@ -1,26 +1,42 @@
 package com.example.loginapplication;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import org.jetbrains.annotations.NotNull;
+
 public class MainActivity extends AppCompatActivity {
     private EditText eName;
     private EditText ePassword;
-    private Button  eLogin;
+    private Button eLogin;
     private TextView eAttemptsInfo;
     private TextView eRegister;
+    private CheckBox eRememberMe;
+    private FirebaseAuth firebaseAuth;
+    private ProgressDialog progressDialog;
+    private TextView forgotPassword;
 
 
 
-    boolean isValid = false;
     private int counter = 5;
+
 
 
 
@@ -34,6 +50,29 @@ public class MainActivity extends AppCompatActivity {
         eLogin = findViewById(R.id.buttonLogin);
         eAttemptsInfo = findViewById(R.id.tvAttempsinfo);
         eRegister = findViewById(R.id.tvRegister);
+        forgotPassword = findViewById(R.id.forgotPassword);
+
+
+
+        eAttemptsInfo.setText("No of attempts remaining: 5");
+
+        firebaseAuth = FirebaseAuth.getInstance();
+
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        progressDialog = new ProgressDialog(this);
+
+//        if (user != null) {
+//            finish();
+//            startActivity(new Intent(MainActivity.this, HomePageActivity.class));
+//        }
+
+        eLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                validate(eName.getText().toString(),ePassword.getText().toString());
+            }
+        });
+
 
         eRegister.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -42,48 +81,40 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        eLogin.setOnClickListener(new View.OnClickListener() {
+        forgotPassword.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String inputName = eName.getText().toString();
-                String inputPasssword = ePassword.getText().toString();
+                startActivity(new Intent(MainActivity.this, ResetPasswordActivity.class));
+            }
+        });
 
-                if(inputName.isEmpty() || inputPasssword.isEmpty()){
-                    Toast.makeText(MainActivity.this,"Please enter all the information correctly",Toast.LENGTH_SHORT).show();
-                }
-                else {
-                    isValid = validate(inputName,inputPasssword);
 
-                    if(!isValid){
-                        counter--;
-                        Toast.makeText(MainActivity.this,"Incorrect Username or Password",Toast.LENGTH_SHORT).show();
+    }
 
-                        eAttemptsInfo.setText("Number of attempts remaining: " + counter);
+    private void validate(String userName, String password) {
 
-                        if (counter == 0){
-                            eLogin.setEnabled(false);
-                        }
-                    }
-                    else {
-                        Toast.makeText(MainActivity.this,"Login Successful",Toast.LENGTH_SHORT).show();
+        progressDialog.setMessage("Please wait for a second");
+        progressDialog.show();
 
-                        Intent intent = new Intent(MainActivity.this,HomePageActivity.class);
-                        startActivity(intent);
-
+        firebaseAuth.signInWithEmailAndPassword(userName, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+            @Override
+            public void onComplete(@NonNull @NotNull Task<AuthResult> task) {
+                if(task.isSuccessful()){
+                    progressDialog.dismiss();
+                    Toast.makeText(MainActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(MainActivity.this, HomePageActivity.class));
+                }else{
+                    Toast.makeText(MainActivity.this, "Login Failed", Toast.LENGTH_SHORT).show();
+                    counter--;
+                    eAttemptsInfo.setText("No of attempts remaining:" + counter);
+                    progressDialog.dismiss();
+                    if(counter ==0){
+                        eLogin.setEnabled(false);
                     }
                 }
             }
         });
     }
-
-    private boolean validate(String name, String password){
-        if(RegistrationActivity.storage != null){
-            if(name.equals(RegistrationActivity.storage.getUsername()) && password.equals(RegistrationActivity.storage.getPassword())){
-                return true;
-            }
-        }
-
-        return false;
-    }
-
 }
+
+
